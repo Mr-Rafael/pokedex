@@ -2,7 +2,6 @@ package pokeapi
 
 import (
 	"net/http"
-	"encoding/json"
 	"io"
 )
 
@@ -18,23 +17,17 @@ type Location struct {
 	URL	string	`json:"url"`
 }
 
-func GetLocations(url string) (LocationAreasResponse, error) {
+func GetLocations(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
-		return LocationAreasResponse{}, err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return LocationAreasResponse{}, err
-	}
-	
-	var data LocationAreasResponse
-	err = json.Unmarshal(body, &data)
-	if err != nil {
-		return LocationAreasResponse{}, err
+		return nil, err
 	}
 
-	return data, nil
+	return body, nil
 }

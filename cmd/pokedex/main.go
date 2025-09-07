@@ -5,7 +5,10 @@ import (
 	"bufio"
 	"os"
 	"strings"
+	"time"
+	"encoding/json"
 	"pokedex/internal/pokeapi"
+	"pokedex/internal/pokecache"
 )
 
 type cliCommand struct {
@@ -17,6 +20,7 @@ type cliCommand struct {
 type config struct {
 	next	string
 	previous	string
+	cache	*pokecache.Cache
 }
 
 func main() {
@@ -43,8 +47,9 @@ func main() {
 		},
 	}
 	conf := config{
-		next:	"http://pokeapi.co/api/v2/location-area",
+		next:	"https://pokeapi.co/api/v2/location-area?offset=0&limit=20",
 		previous:	"",
+		cache:	pokecache.NewCache(10 * time.Minute),
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
@@ -85,19 +90,33 @@ func commandHelp(conf *config) error {
 }
 
 func commandMap(conf *config) error {
-	response, err := pokeapi.GetLocations(conf.next)
-	if err != nil {
-		fmt.Println("Error:", err)
+	var err error
+	responseBytes, ok := conf.cache.Get(conf.next)
+	if !ok {
+		fmt.Println("The URL was not cached. Calling the PokéAPI!")
+		responseBytes, err = pokeapi.GetLocations(conf.next)
+		if err != nil {
+			fmt.Println("Error:", err)
+		}
+		conf.cache.Add(conf.next, responseBytes)
+	} else {
+		fmt.Println("The URL was already cached! Using cached version.")
 	}
 
-	conf.next = response.Next
-	if response.Previous != nil {
-		conf.previous = *(response.Previous)
+	var data pokeapi.LocationAreasResponse
+	err = json.Unmarshal(responseBytes, &data)
+	if err != nil {
+		return err
+	}
+
+	conf.next = data.Next
+	if data.Previous != nil {
+		conf.previous = *(data.Previous)
 	} else {
 		conf.previous = ""
 	}
 
-	for _, location := range response.Results {
+	for _, location := range data.Results {
 		fmt.Println(location.Name)
 	}
 
@@ -105,23 +124,37 @@ func commandMap(conf *config) error {
 }
 
 func commandMapB(conf *config) error {
+	var err error
 	if conf.previous == "" {
 		fmt.Println("you're on the first page")
 		return nil
 	}
-	response, err := pokeapi.GetLocations(conf.previous)
-	if err != nil {
-		fmt.Println("Error:", err)
+	responseBytes, ok := conf.cache.Get(conf.previous)
+	if !ok {
+		fmt.Println("The URL was not cached. Calling the PokéAPI!")
+		responseBytes, err = pokeapi.GetLocations(conf.previous)
+		if err != nil {
+			fmt.Println("Error:", err)
+		}
+		conf.cache.Add(conf.previous, responseBytes)
+	} else {
+		fmt.Println("The URL was already cached! Using cached version.")
 	}
 
-	conf.next = response.Next
-	if response.Previous != nil {
-		conf.previous = *(response.Previous)
+	var data pokeapi.LocationAreasResponse
+	err = json.Unmarshal(responseBytes, &data)
+	if err != nil {
+		return err
+	}
+
+	conf.next = data.Next
+	if data.Previous != nil {
+		conf.previous = *(data.Previous)
 	} else {
 		conf.previous = ""
 	}
 
-	for _, location := range response.Results {
+	for _, location := range data.Results {
 		fmt.Println(location.Name)
 	}
 
