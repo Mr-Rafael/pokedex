@@ -49,7 +49,7 @@ func main() {
 	conf := config{
 		next:	"https://pokeapi.co/api/v2/location-area?offset=0&limit=20",
 		previous:	"",
-		cache:	pokecache.NewCache(10 * time.Minute),
+		cache:	pokecache.NewCache(3 * time.Minute),
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
@@ -93,14 +93,11 @@ func commandMap(conf *config) error {
 	var err error
 	responseBytes, ok := conf.cache.Get(conf.next)
 	if !ok {
-		fmt.Println("The URL was not cached. Calling the PokéAPI!")
 		responseBytes, err = pokeapi.GetLocations(conf.next)
 		if err != nil {
 			fmt.Println("Error:", err)
 		}
 		conf.cache.Add(conf.next, responseBytes)
-	} else {
-		fmt.Println("The URL was already cached! Using cached version.")
 	}
 
 	var data pokeapi.LocationAreasResponse
@@ -131,14 +128,11 @@ func commandMapB(conf *config) error {
 	}
 	responseBytes, ok := conf.cache.Get(conf.previous)
 	if !ok {
-		fmt.Println("The URL was not cached. Calling the PokéAPI!")
 		responseBytes, err = pokeapi.GetLocations(conf.previous)
 		if err != nil {
 			fmt.Println("Error:", err)
 		}
 		conf.cache.Add(conf.previous, responseBytes)
-	} else {
-		fmt.Println("The URL was already cached! Using cached version.")
 	}
 
 	var data pokeapi.LocationAreasResponse
