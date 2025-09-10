@@ -17,7 +17,20 @@ type Location struct {
 	URL	string	`json:"url"`
 }
 
-func GetLocations(url string) ([]byte, error) {
+type PokemonEncountersResponse struct {
+	PokemonEncounters	[]PokemonEncounter	`json:"pokemon_encounters"`
+}
+
+type PokemonEncounter struct {
+	Pokemon	Pokemon	`json:"pokemon"`
+}
+
+type Pokemon struct {
+	Name	string	`json:"name"`
+	URL	string	`json:"url`
+}
+
+func GetResponse(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err

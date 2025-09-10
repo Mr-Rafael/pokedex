@@ -73,7 +73,6 @@ func (c *Cache) StopReaper() {
 }
 
 func StartReaper(interval time.Duration, quit chan struct{}, cache *Cache) {
-	fmt.Println("Starting the cache reaper")
 	ticker := time.NewTicker(interval)
 	go func() {
 		for {

@@ -14,12 +14,13 @@ import (
 type cliCommand struct {
 	name	string
 	description	string
-	callback func(*config)	error
+	callback func(*config, string)	error
 }
 
 type config struct {
 	next	string
 	previous	string
+	exploreURL	string
 	cache	*pokecache.Cache
 }
 
@@ -45,10 +46,21 @@ func main() {
 			description:	"Displays the previous 20 Pokemon World areas.",
 			callback:	commandMapB,
 		},
+		"explore": {
+			name:	"explore",
+			description:	"Displays the pokemon in an area. Receives the area name as argument.",
+			callback:	commandExplore,
+		},
+		"cache": {
+			name:	"cache",
+			description:	"Prints the currently cached pages.",
+			callback:	commandCache,
+		},
 	}
 	conf := config{
 		next:	"https://pokeapi.co/api/v2/location-area?offset=0&limit=20",
 		previous:	"",
+		exploreURL:	"https://pokeapi.co/api/v2/location-area/",
 		cache:	pokecache.NewCache(3 * time.Minute),
 	}
 
@@ -57,11 +69,16 @@ func main() {
 		fmt.Print("Pokedex > ")
 		if scanner.Scan() {
 			input := scanner.Text()
-			command, ok := supportedCommands[input]
+			arguments := strings.Fields(input)
+			command, ok := supportedCommands[arguments[0]]
 			if !ok {
 				commandUnknown()
 			} else {
-				command.callback(&conf)
+				if len(arguments) == 1 {
+					command.callback(&conf, "")
+				} else {
+					command.callback(&conf, arguments[1])
+				}
 			}
 		}
 	}
@@ -74,13 +91,13 @@ func cleanInput(text string) []string {
 	return words
 }
 
-func commandExit(conf *config) error {
+func commandExit(conf *config, arg1 string) error {
 	fmt.Println("Closing the Pokedex... Goodbye!")
 	os.Exit(0)
 	return nil
 }
 
-func commandHelp(conf *config) error {
+func commandHelp(conf *config, arg1 string) error {
 	fmt.Println(`Welcome to the Pokedex!
 	Usage:
 	
@@ -89,11 +106,11 @@ func commandHelp(conf *config) error {
 	return nil
 }
 
-func commandMap(conf *config) error {
+func commandMap(conf *config, arg1 string) error {
 	var err error
 	responseBytes, ok := conf.cache.Get(conf.next)
 	if !ok {
-		responseBytes, err = pokeapi.GetLocations(conf.next)
+		responseBytes, err = pokeapi.GetResponse(conf.next)
 		if err != nil {
 			fmt.Println("Error:", err)
 		}
@@ -120,7 +137,7 @@ func commandMap(conf *config) error {
 	return nil
 }
 
-func commandMapB(conf *config) error {
+func commandMapB(conf *config, arg1 string) error {
 	var err error
 	if conf.previous == "" {
 		fmt.Println("you're on the first page")
@@ -128,7 +145,7 @@ func commandMapB(conf *config) error {
 	}
 	responseBytes, ok := conf.cache.Get(conf.previous)
 	if !ok {
-		responseBytes, err = pokeapi.GetLocations(conf.previous)
+		responseBytes, err = pokeapi.GetResponse(conf.previous)
 		if err != nil {
 			fmt.Println("Error:", err)
 		}
@@ -152,6 +169,36 @@ func commandMapB(conf *config) error {
 		fmt.Println(location.Name)
 	}
 
+	return nil
+}
+
+func commandExplore(conf *config, arg1 string) error {
+	var err error
+	fullURL := conf.exploreURL + arg1
+	responseBytes, ok := conf.cache.Get(fullURL)
+	if !ok {
+		responseBytes, err = pokeapi.GetResponse(fullURL)
+		if err != nil {
+			fmt.Println("Error:", err)
+		}
+		conf.cache.Add(fullURL, responseBytes)
+	}
+
+	var data pokeapi.PokemonEncountersResponse
+	err = json.Unmarshal(responseBytes, &data)
+	if err != nil {
+		return err
+	}
+
+	for _, pokemon := range data.PokemonEncounters {
+		fmt.Println(pokemon.Pokemon.Name)
+	}
+
+	return nil
+}
+
+func commandCache(conf *config, arg1 string) error {
+	conf.cache.PrintStatus()
 	return nil
 }
 
