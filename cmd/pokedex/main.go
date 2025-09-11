@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"pokedex/internal/pokeapi"
 	"pokedex/internal/pokecache"
+	"pokedex/internal/pokeball"
 )
 
 type cliCommand struct {
@@ -21,6 +22,7 @@ type config struct {
 	next	string
 	previous	string
 	exploreURL	string
+	pokemonURL	string
 	cache	*pokecache.Cache
 }
 
@@ -51,6 +53,11 @@ func main() {
 			description:	"Displays the pokemon in an area. Receives the area name as argument.",
 			callback:	commandExplore,
 		},
+		"throw": {
+			name:	"throw",
+			description:	"Throws a pokeball at the specified pokemon, with a probability of success",
+			callback:	commandThrow,
+		},
 		"cache": {
 			name:	"cache",
 			description:	"Prints the currently cached pages.",
@@ -61,6 +68,7 @@ func main() {
 		next:	"https://pokeapi.co/api/v2/location-area?offset=0&limit=20",
 		previous:	"",
 		exploreURL:	"https://pokeapi.co/api/v2/location-area/",
+		pokemonURL: "https://pokeapi.co/api/v2/pokemon/",
 		cache:	pokecache.NewCache(3 * time.Minute),
 	}
 
@@ -173,6 +181,10 @@ func commandMapB(conf *config, arg1 string) error {
 }
 
 func commandExplore(conf *config, arg1 string) error {
+	if len(arg1) <= 0 {
+		fmt.Println("Please specify the area to explore.")
+		return nil
+	}
 	var err error
 	fullURL := conf.exploreURL + arg1
 	responseBytes, ok := conf.cache.Get(fullURL)
@@ -193,6 +205,33 @@ func commandExplore(conf *config, arg1 string) error {
 	for _, pokemon := range data.PokemonEncounters {
 		fmt.Println(pokemon.Pokemon.Name)
 	}
+
+	return nil
+}
+
+func commandThrow(conf *config, arg1 string) error {
+	if len(arg1) <= 0 {
+		fmt.Println("Please specify the Pokémon you're trying to catch!")
+		return nil
+	}
+	var err error
+	fullURL := conf.pokemonURL + arg1
+	responseBytes, ok := conf.cache.Get(fullURL)
+	if !ok {
+		responseBytes, err = pokeapi.GetResponse(fullURL)
+		if err != nil {
+			fmt.Println("Error:", err)
+		}
+		conf.cache.Add(fullURL, responseBytes)
+	}
+
+	var data pokeapi.PokemonResponse
+	err = json.Unmarshal(responseBytes, &data)
+	if err != nil {
+		return err
+	}
+
+	pokeball.Throw(data)
 
 	return nil
 }

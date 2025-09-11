@@ -22,12 +22,17 @@ type PokemonEncountersResponse struct {
 }
 
 type PokemonEncounter struct {
-	Pokemon	Pokemon	`json:"pokemon"`
+	Pokemon	PokemonEncounterData	`json:"pokemon"`
 }
 
-type Pokemon struct {
+type PokemonEncounterData struct {
 	Name	string	`json:"name"`
 	URL	string	`json:"url`
+}
+
+type PokemonResponse struct {
+	Name	string	`json:"name"`
+	BaseExperience	int	`json:"base_experience"`
 }
 
 func GetResponse(url string) ([]byte, error) {
