@@ -53,10 +53,10 @@ func main() {
 			description:	"Displays the pokemon in an area. Receives the area name as argument.",
 			callback:	commandExplore,
 		},
-		"throw": {
-			name:	"throw",
+		"catch": {
+			name:	"catch",
 			description:	"Throws a pokeball at the specified pokemon, with a probability of success",
-			callback:	commandThrow,
+			callback:	commandCatch,
 		},
 		"cache": {
 			name:	"cache",
@@ -209,7 +209,7 @@ func commandExplore(conf *config, arg1 string) error {
 	return nil
 }
 
-func commandThrow(conf *config, arg1 string) error {
+func commandCatch(conf *config, arg1 string) error {
 	if len(arg1) <= 0 {
 		fmt.Println("Please specify the Pokémon you're trying to catch!")
 		return nil
@@ -231,7 +231,13 @@ func commandThrow(conf *config, arg1 string) error {
 		return err
 	}
 
-	pokeball.Throw(data)
+	fmt.Printf("Throwing a Pokeball at %v...\n", data.Name)
+
+	if pokeball.Throw(data) {
+		fmt.Printf("%v was caught!\n", data.Name)
+	} else {
+		fmt.Printf("%v escaped!\n", data.Name)
+	}
 
 	return nil
 }
