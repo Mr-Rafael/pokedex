@@ -33,6 +33,31 @@ type PokemonEncounterData struct {
 type PokemonResponse struct {
 	Name	string	`json:"name"`
 	BaseExperience	int	`json:"base_experience"`
+	Height	int	`json:"height"`
+	Weight	int	`json:"weight"`
+	Stats	[]PokemonStatEntry	`json:"stats"`
+	Types	[]PokemonTypeEntry	`json:"types"`
+}
+
+type PokemonStatEntry struct {
+	BaseStat	int	`json:"base_stat"`
+	Effort	int	`json:"effort"`
+	Stat	PokemonStat `json:"stat"`
+}
+
+type PokemonStat struct {
+	Name	string	`json:"name"`
+	URL	string	`json:"url"`
+}
+
+type PokemonTypeEntry struct {
+	Slot	int	`json:"slot"`
+	Type	PokemonType `json:"type"`
+}
+
+type PokemonType struct {
+	Name	string	`json:"name"`
+	URL	string	`json:"url"`
 }
 
 func GetResponse(url string) ([]byte, error) {

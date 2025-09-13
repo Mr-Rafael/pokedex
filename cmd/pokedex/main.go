@@ -235,6 +235,15 @@ func commandCatch(conf *config, arg1 string) error {
 
 	if pokeball.Throw(data) {
 		fmt.Printf("%v was caught!\n", data.Name)
+		fmt.Printf("\nHeight: %v\nWeight: %v\n", data.Height, data.Weight)
+		for _, statEntry := range data.Stats {
+			fmt.Printf("%v: %v\n", statEntry.Stat.Name, statEntry.BaseStat)
+		}
+		fmt.Printf("Types: [")
+		for _, typeEntry := range data.Types {
+			fmt.Printf(" %v ", typeEntry.Type.Name)
+		}
+		fmt.Printf("]\n")
 	} else {
 		fmt.Printf("%v escaped!\n", data.Name)
 	}
