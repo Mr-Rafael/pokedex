@@ -10,6 +10,7 @@ import (
 	"pokedex/internal/pokeapi"
 	"pokedex/internal/pokecache"
 	"pokedex/internal/pokeball"
+	"pokedex/internal/pokedex"
 )
 
 type cliCommand struct {
@@ -24,6 +25,7 @@ type config struct {
 	exploreURL	string
 	pokemonURL	string
 	cache	*pokecache.Cache
+	pokedex	*pokedex.Pokedex
 }
 
 func main() {
@@ -58,6 +60,11 @@ func main() {
 			description:	"Throws a pokeball at the specified pokemon, with a probability of success",
 			callback:	commandCatch,
 		},
+		"inspect": {
+			name:	"inspect",
+			description:	"Shows the Pokédex information about the specified Pokémon.",
+			callback:	commandInspect,
+		},
 		"cache": {
 			name:	"cache",
 			description:	"Prints the currently cached pages.",
@@ -70,6 +77,7 @@ func main() {
 		exploreURL:	"https://pokeapi.co/api/v2/location-area/",
 		pokemonURL: "https://pokeapi.co/api/v2/pokemon/",
 		cache:	pokecache.NewCache(3 * time.Minute),
+		pokedex:	pokedex.NewPokedex(),
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
@@ -235,19 +243,17 @@ func commandCatch(conf *config, arg1 string) error {
 
 	if pokeball.Throw(data) {
 		fmt.Printf("%v was caught!\n", data.Name)
-		fmt.Printf("\nHeight: %v\nWeight: %v\n", data.Height, data.Weight)
-		for _, statEntry := range data.Stats {
-			fmt.Printf("%v: %v\n", statEntry.Stat.Name, statEntry.BaseStat)
-		}
-		fmt.Printf("Types: [")
-		for _, typeEntry := range data.Types {
-			fmt.Printf(" %v ", typeEntry.Type.Name)
-		}
-		fmt.Printf("]\n")
+		conf.pokedex.RegisterPokemon(data)
+		fmt.Prinln("You may now inspect it with the inspect command.")
 	} else {
 		fmt.Printf("%v escaped!\n", data.Name)
 	}
 
+	return nil
+}
+
+func commandInspect(conf *config, arg1 string) error {
+	conf.pokedex.PrintData(arg1)
 	return nil
 }
 
