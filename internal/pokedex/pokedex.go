@@ -62,11 +62,18 @@ func (p *Pokedex) PrintData(name string) {
 		fmt.Printf("Weight: %v\n", entry.Weight)
 		fmt.Printf("Stats:\n")
 		for statName, statValue := range entry.Stats {
-			fmt.Printf("  -%v: %v\n", statName, statValue)
+			fmt.Printf("  - %v: %v\n", statName, statValue)
 		}
 		fmt.Printf("Types:\n")
 		for _, pokeType := range entry.Types {
 			fmt.Printf("  - %v\n", pokeType)
 		}
+	}
+}
+
+func (p *Pokedex) PrintAllPokemon() {
+	fmt.Printf("Your Pokedex:\n")
+	for name, _ := range p.Entries {
+		fmt.Printf(" - %v\n", name)
 	}
 }

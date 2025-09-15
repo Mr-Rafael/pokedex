@@ -26,6 +26,7 @@ type config struct {
 	pokemonURL	string
 	cache	*pokecache.Cache
 	pokedex	*pokedex.Pokedex
+	commands map[string]cliCommand
 }
 
 func main() {
@@ -65,6 +66,11 @@ func main() {
 			description:	"Shows the Pokédex information about the specified Pokémon.",
 			callback:	commandInspect,
 		},
+		"pokedex": {
+			name:	"pokedex",
+			description:	"Shows all pokemon registered in the current Pokédex.",
+			callback:	commandPokedex,
+		},
 		"cache": {
 			name:	"cache",
 			description:	"Prints the currently cached pages.",
@@ -78,6 +84,7 @@ func main() {
 		pokemonURL: "https://pokeapi.co/api/v2/pokemon/",
 		cache:	pokecache.NewCache(3 * time.Minute),
 		pokedex:	pokedex.NewPokedex(),
+		commands:	supportedCommands,
 	}
 
 	scanner := bufio.NewScanner(os.Stdin)
@@ -114,11 +121,10 @@ func commandExit(conf *config, arg1 string) error {
 }
 
 func commandHelp(conf *config, arg1 string) error {
-	fmt.Println(`Welcome to the Pokedex!
-	Usage:
-	
-	help: Displays a help message
-	exit: Exit the Pokedex`)
+	fmt.Printf("Welcome to the Pokedex!\nUsage:\n")
+	for name, value := range conf.commands {
+		fmt.Printf("- %v: %v\n", name, value.description)
+	}
 	return nil
 }
 
@@ -244,7 +250,7 @@ func commandCatch(conf *config, arg1 string) error {
 	if pokeball.Throw(data) {
 		fmt.Printf("%v was caught!\n", data.Name)
 		conf.pokedex.RegisterPokemon(data)
-		fmt.Prinln("You may now inspect it with the inspect command.")
+		fmt.Println("You may now inspect it with the inspect command.")
 	} else {
 		fmt.Printf("%v escaped!\n", data.Name)
 	}
@@ -254,6 +260,11 @@ func commandCatch(conf *config, arg1 string) error {
 
 func commandInspect(conf *config, arg1 string) error {
 	conf.pokedex.PrintData(arg1)
+	return nil
+}
+
+func commandPokedex(conf *config, arg1 string) error {
+	conf.pokedex.PrintAllPokemon()
 	return nil
 }
 
